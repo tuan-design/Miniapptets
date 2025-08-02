@@ -27,7 +27,7 @@
     <div class="nav-item active" data-tab="tab1"><i class="fas fa-list"></i><span>Giao dịch</span></div>
     <div class="nav-item" data-tab="tab2"><i class="fas fa-table"></i><span>Thống kê</span></div>
     <div class="nav-item" data-tab="tab3"><i class="fas fa-chart-bar"></i><span>Biểu đồ</span></div>
-    <div class="nav-item" data-tab="tab4"><i class="fas fa-info-circle"></i><span>Giới thiệu</span></div>
+    
     <div class="nav-item" data-tab="tab5"><i class="fas fa-money-bill-wave"></i><span>Liệt kê</span></div>
     <div class="nav-item" data-tab="tab6"><i class="fas fa-search"></i><span>Tìm kiếm</span></div>
     <div class="nav-item" data-tab="tab7"><i class="fas fa-key"></i><span>Từ khóa</span></div>
@@ -101,6 +101,216 @@
         <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
       </div>
       <div class="input-group">
+        Từ:
+        <select id="startMonth">
+          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+        </select>
+        Đến:
+        <select id="endMonth">
+          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+        </select>
+        <button id="fetchMonthlyDataBtn">Lọc</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+        <div class="monthly-legend" id="monthlyLegend"></div>
+      </div>
+    </div>
+    
+    
+
+    <!-- Tab 5: Chi Tiêu Trong Tháng -->
+    <div id="tab5" class="tab-content">
+      <h1>CHI TIÊU TRONG THÁNG</h1>
+      <p class="notification">Vui lòng chọn tháng và ấn "Lọc" để xem dữ liệu.</p>
+      <div id="errorMessageTab5" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="successMessageTab5" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="loadingTab5" style="display: none; text-align: center; margin: 1rem 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      </div>
+      <div class="input-group">
+        Tháng:
+        <select id="expenseMonth">
+          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+        </select>
+        <button id="fetchMonthlyExpensesBtn">Lọc</button>
+      </div>
+      <div class="stats-container" id="monthlyExpenseSummary">
+        <div class="stat-box income"><div class="title">Tổng thu nhập</div><div class="amount">0đ</div></div>
+        <div class="stat-box expense"><div class="title">Tổng chi tiêu</div><div class="amount">0đ</div></div>
+        <div class="stat-box balance"><div class="title">Số dư</div><div class="amount">0đ</div></div>
+      </div>
+      <div class="transactions-list" id="monthlyExpensesContainer"></div>
+      <div id="paginationMonthly" style="text-align: center; margin-top: 1rem;">
+        <button id="prevPageMonthly" class="pagination-btn" disabled>Trang trước</button>
+        <span id="pageInfoMonthly"></span>
+        <button id="nextPageMonthly" class="pagination-btn">Trang sau</button>
+      </div>
+    </div>
+
+    <!-- Tab 6: Tìm Kiếm Giao Dịch -->
+    <div id="tab6" class="tab-content">
+      <h1>TÌM KIẾM GIAO DỊCH</h1>
+      <p class="notification">Nhập ít nhất một tiêu chí (nội dung, số tiền, hoặc phân loại chi tiết) để tìm kiếm. Tháng là tùy chọn.</p>
+      <div id="errorMessageTab6" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="successMessageTab6" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="loadingTab6" style="display: none; text-align: center; margin: 1rem 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      </div>
+      <div class="input-group vertical">
+        <div class="input-field">
+          <label>Tháng: </label>
+          <select id="searchMonth" class="uniform-input">
+            <option value="">Tất cả</option>
+            <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+            <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+          </select>
+        </div>
+        <div class="input-field">
+          <label>Nội dung: </label>
+          <input type="text" id="searchContent" class="uniform-input" placeholder="Nhập nội dung">
+        </div>
+        <div class="input-field">
+          <label>Số tiền: </label>
+          <input type="text" id="searchAmount" class="uniform-input" placeholder="Nhập số tiền (VD: 50.000)">
+        </div>
+        <div class="input-field">
+          <label>Phân loại chi tiết: </label>
+          <select id="searchCategory" class="uniform-input">
+            <option value="">Tất cả</option>
+          </select>
+        </div>
+        <button id="searchTransactionsBtn">Tìm kiếm</button>
+      </div>
+      <div class="transactions-list" id="searchResultsContainer"></div>
+      <div id="paginationSearch">
+        <button id="prevPageSearch" class="pagination-btn" disabled>Trang trước</button>
+        <span id="pageInfoSearch"></span>
+        <button id="nextPageSearch" class="pagination-btn">Trang sau</button>
+      </div>
+    </div>
+
+    <!-- Tab 7: Quản Lý Từ Khóa -->
+    <div id="tab7" class="tab-content">
+      <h1>QUẢN LÝ TỪ KHÓA</h1>
+      <p class="notification">Chọn phân loại chi tiết và nhập từ khóa để thêm hoặc xóa khỏi sheet Từ khóa.</p>
+      <div id="errorMessageTab7" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="successMessageTab7" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
+      <div id="loadingTab7" style="display: none; text-align: center; margin: 1rem 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      </div>
+      <div class="input-group vertical">
+        <div class="input-field">
+          <label>Phân loại chi tiết: </label>
+          <select id="keywordCategory" class="uniform-input">
+            <option value="">Chọn phân loại</option>
+          </select>
+        </div>
+        <div class="input-field">
+          <label>Từ khóa: </label>
+          <input type="text" id="keywordInput" class="uniform-input" placeholder="Nhập từ khóa (VD: đổ dầu, đổ xăng)">
+        </div>
+        <div class="button-group">
+          <button id="addKeywordBtn">Thêm từ khóa</button>
+          <button id="deleteKeywordBtn">Xóa từ khóa</button>
+        </div>
+        <button id="fetchKeywordsBtn">Tải dữ liệu</button>
+      </div>
+      <div class="keywords-list" id="keywordsContainer"></div>
+    </div>
+
+    <!-- ==========================================================================
+         4. Modal và Popup
+         Các modal để chỉnh sửa, thêm, xóa giao dịch.
+         ========================================================================== -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h2>Chỉnh sửa giao dịch</h2>
+        <div id="editError" class="error-message"></div>
+        <form id="editForm">
+          <label for="editTransactionId">Mã giao dịch:</label>
+          <input type="text" id="editTransactionId" readonly>
+          <label for="editDate">Ngày:</label>
+          <input type="date" id="editDate" required>
+          <label for="editContent">Nội dung:</label>
+          <input type="text" id="editContent" placeholder="Nhập nội dung giao dịch" required>
+          <label for="editAmount">Số tiền:</label>
+          <input type="text" id="editAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
+          <label for="editType">Phân loại:</label>
+          <select id="editType" required>
+            <option value="Thu nhập">Thu nhập</option>
+            <option value="Chi tiêu">Chi tiêu</option>
+          </select>
+          <label for="editCategory">Phân loại chi tiết:</label>
+          <select id="editCategory" required></select>
+          <label for="editNote">Ghi chú (nếu có):</label>
+          <textarea id="editNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeEditForm()">Hủy</button>
+            <button type="submit" class="save-btn">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <h2>Thêm giao dịch mới</h2>
+        <div id="addError" class="error-message"></div>
+        <form id="addForm">
+          <label for="addDate">Ngày:</label>
+          <input type="date" id="addDate" required>
+          <label for="addContent">Nội dung:</label>
+          <input type="text" id="addContent" placeholder="Nhập nội dung giao dịch" required>
+          <label for="addAmount">Số tiền:</label>
+          <input type="text" id="addAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
+          <label for="addType">Phân loại:</label>
+          <select id="addType" required>
+            <option value="Thu nhập">Thu nhập</option>
+            <option value="Chi tiêu">Chi tiêu</option>
+          </select>
+          <label for="addCategory">Phân loại chi tiết:</label>
+          <select id="addCategory" required></select>
+          <label for="addNote">Ghi chú (nếu có):</label>
+          <textarea id="addNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeAddForm()">Hủy</button>
+            <button type="submit" class="save-btn">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="confirmDeleteModal" class="modal">
+      <div class="modal-content">
+        <h2>Xác nhận xóa</h2>
+        <p>Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.</p>
+        <div class="btn-group">
+          <button type="button" class="cancel-btn" onclick="closeConfirmDeleteModal()">Hủy</button>
+          <button type="button" class="save-btn" id="confirmDeleteBtn">Xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       5. Script Liên Kết
+       Liên kết tới các file JavaScript.
+       ========================================================================== -->
+    <script src="script.js"></script>
+</body>
+</html>
         Từ:
         <select id="startMonth">
           <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
