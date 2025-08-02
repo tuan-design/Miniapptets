@@ -1,7 +1,3 @@
-const axios = require('axios');
-const NodeCache = require('node-cache');
-const cache = new NodeCache({ stdTTL: 600 }); // Cache 10 phút
-
 exports.handler = async function (event, context) {
   const startTime = Date.now();
   try {
@@ -15,32 +11,19 @@ exports.handler = async function (event, context) {
       };
     }
 
-    // Kiểm tra cache
-    const cacheKey = `${event.httpMethod}:${targetUrl}`;
-    const cachedResponse = cache.get(cacheKey);
-    if (cachedResponse) {
-      console.log(`Cache hit for ${cacheKey}`);
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-        body: JSON.stringify(cachedResponse),
-      };
-    }
-
     // Gửi yêu cầu đến API đích
-    const response = await axios({
+    const response = await fetch(decodeURIComponent(targetUrl), {
       method: event.httpMethod,
-      url: decodeURIComponent(targetUrl),
-      data: event.body ? JSON.parse(event.body) : undefined,
       headers: { 'Content-Type': 'application/json' },
+      body: event.body || undefined,
     });
 
-    // Lưu vào cache
-    cache.set(cacheKey, response.data);
+    // Kiểm tra phản hồi
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
     console.log(`Proxy request to ${targetUrl} took ${Date.now() - startTime}ms`);
 
     return {
@@ -50,7 +33,7 @@ exports.handler = async function (event, context) {
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: JSON.stringify(response.data),
+      body: JSON.stringify(data),
     };
   } catch (error) {
     console.error('Proxy error:', error);
