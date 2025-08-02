@@ -3,14 +3,771 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Chi Tiêu 3D</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Mini App Quản Lý Thu Chi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+            animation: slideIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        @keyframes slideIn {
+            from {transform: translateY(-50px);}
+            to {transform: translateY(0);}
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .stat-card i {
+            font-size: 1.75rem;
+            padding: 1rem;
+            border-radius: 50%;
+        }
+    </style>
 </head>
-<body>
-    <div id="loading-screen">Đang tải dữ liệu...</div>
+<body class="antialiased text-gray-800">
+
+    <div id="loading-overlay">
+        <div class="loader"></div>
+    </div>
+
+    <div class="container mx-auto p-4 max-w-4xl">
+        <header class="text-center mb-4">
+            <h1 class="text-3xl font-bold text-gray-700">Bảng Điều Khiển Tài Chính</h1>
+            <p class="text-gray-500">Quản lý thu nhập và chi tiêu của bạn</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-4 border-b border-gray-200">
+            <nav class="flex -mb-px space-x-4" aria-label="Tabs">
+                <button onclick="changeTab('overview')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300 active" data-tab="overview">
+                    <i class="fas fa-home mr-2"></i>Tổng quan
+                </button>
+                <button onclick="changeTab('charts')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300" data-tab="charts">
+                    <i class="fas fa-chart-pie mr-2"></i>Biểu đồ
+                </button>
+                <button onclick="changeTab('transactions')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300" data-tab="transactions">
+                    <i class="fas fa-exchange-alt mr-2"></i>Giao dịch
+                </button>
+                <button onclick="changeTab('keywords')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300" data-tab="keywords">
+                    <i class="fas fa-tags mr-2"></i>Từ khóa
+                </button>
+                 <button onclick="changeTab('search')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300" data-tab="search">
+                    <i class="fas fa-search mr-2"></i>Tìm kiếm
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-pane active">
+                <div class="mb-4 flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="startDate" class="block text-sm font-medium text-gray-700">Từ ngày</label>
+                        <input type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="flex-1">
+                        <label for="endDate" class="block text-sm font-medium text-gray-700">Đến ngày</label>
+                        <input type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <button onclick="fetchDashboardData()" class="self-end bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        <i class="fas fa-filter mr-2"></i>Lọc
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div class="stat-card">
+                        <i class="fas fa-arrow-down text-green-500 bg-green-100"></i>
+                        <div>
+                            <h3 class="text-gray-500">Tổng thu nhập</h3>
+                            <p id="totalIncome" class="text-2xl font-semibold">0 VNĐ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-arrow-up text-red-500 bg-red-100"></i>
+                        <div>
+                            <h3 class="text-gray-500">Tổng chi tiêu</h3>
+                            <p id="totalExpense" class="text-2xl font-semibold">0 VNĐ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-wallet text-blue-500 bg-blue-100"></i>
+                        <div>
+                            <h3 class="text-gray-500">Số dư</h3>
+                            <p id="balance" class="text-2xl font-semibold">0 VNĐ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Tab -->
+            <div id="charts" class="tab-pane hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-semibold text-center mb-2">Phân tích chi tiêu theo danh mục</h3>
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                         <h3 class="font-semibold text-center mb-2">Thu chi các tháng</h3>
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div id="transactions" class="tab-pane hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <label for="month-filter" class="mr-2">Chọn tháng:</label>
+                        <select id="month-filter" class="rounded-md border-gray-300" onchange="fetchTransactions()">
+                            <!-- Options will be populated by JS -->
+                        </select>
+                        <select id="year-filter" class="rounded-md border-gray-300" onchange="fetchTransactions()">
+                            <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <button onclick="openTransactionModal()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i>Thêm giao dịch
+                    </button>
+                </div>
+                <div class="bg-white shadow rounded-lg overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nội dung</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-list" class="bg-white divide-y divide-gray-200">
+                            <!-- Transactions will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Keywords Tab -->
+            <div id="keywords" class="tab-pane hidden">
+                 <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-xl font-semibold mb-4">Quản lý từ khóa</h3>
+                    <div id="keyword-list" class="space-y-4">
+                        <!-- Keywords will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="search" class="tab-pane hidden">
+                <div class="bg-white shadow rounded-lg p-4">
+                    <h3 class="text-xl font-semibold mb-4">Tìm kiếm giao dịch</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <input type="text" id="search-content" placeholder="Nội dung" class="p-2 border rounded-md">
+                        <input type="number" id="search-amount" placeholder="Số tiền" class="p-2 border rounded-md">
+                        <select id="search-category" class="p-2 border rounded-md">
+                            <option value="">Tất cả danh mục</option>
+                        </select>
+                        <select id="search-month" class="p-2 border rounded-md">
+                            <option value="">Tất cả các tháng</option>
+                        </select>
+                    </div>
+                    <button onclick="searchTransactions()" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        <i class="fas fa-search mr-2"></i>Tìm kiếm
+                    </button>
+                    <div id="search-results" class="mt-6">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="modal-title" class="text-xl font-bold">Thêm Giao Dịch Mới</h2>
+                <button onclick="closeTransactionModal()" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <form id="transactionForm">
+                <input type="hidden" id="transactionId">
+                <div class="mb-4">
+                    <label for="transactionType" class="block text-sm font-medium text-gray-700">Loại</label>
+                    <select id="transactionType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="Chi tiêu">Chi tiêu</option>
+                        <option value="Thu nhập">Thu nhập</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="transactionDate" class="block text-sm font-medium text-gray-700">Ngày</label>
+                    <input type="date" id="transactionDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="transactionContent" class="block text-sm font-medium text-gray-700">Nội dung</label>
+                    <input type="text" id="transactionContent" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="transactionAmount" class="block text-sm font-medium text-gray-700">Số tiền</label>
+                    <input type="number" id="transactionAmount" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="transactionCategory" class="block text-sm font-medium text-gray-700">Phân loại</label>
+                    <select id="transactionCategory" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <!-- Categories will be populated by JS -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="transactionNote" class="block text-sm font-medium text-gray-700">Ghi chú</label>
+                    <textarea id="transactionNote" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeTransactionModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Hủy</button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // --- GLOBAL CONFIG ---
+    let API_URL = '';
+    let SHEET_ID = '';
+    let expenseChartInstance = null;
+    let monthlyChartInstance = null;
+    let allCategories = [];
+
+    // --- UTILITY FUNCTIONS ---
+    const showLoader = (show) => {
+        document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    };
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    // --- API CALLS ---
+    async function fetchFromGAS(action, params = {}, method = 'GET') {
+        showLoader(true);
+        try {
+            let url = `${API_URL}?action=${action}`;
+            
+            // Add sheetId to all requests
+            params.sheetId = SHEET_ID;
+
+            let options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+
+            if (method === 'GET') {
+                url += '&' + new URLSearchParams(params).toString();
+            } else { // POST
+                options.body = JSON.stringify({ ...params, action });
+                 // For POST with Apps Script, we need to redirect
+                options.redirect = 'follow';
+            }
+            
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            return data;
+        } catch (error) {
+            console.error(`Error during action ${action}:`, error);
+            alert(`Đã xảy ra lỗi: ${error.message}`);
+            return null;
+        } finally {
+            showLoader(false);
+        }
+    }
+
+    // --- DATA FETCHING AND RENDERING ---
+    async function fetchDashboardData() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert("Vui lòng chọn cả ngày bắt đầu và kết thúc.");
+            return;
+        }
+
+        const summary = await fetchFromGAS('getFinancialSummary', { startDate, endDate });
+        if (summary) {
+            renderSummary(summary);
+        }
+        
+        const chartData = await fetchFromGAS('getChartData', { startDate, endDate });
+        if (chartData) {
+            renderExpenseChart(chartData);
+        }
+    }
     
-    <script src="script.js"></script>
+    async function fetchMonthlyChartData() {
+        const year = new Date().getFullYear();
+        const data = await fetchFromGAS('getMonthlyData', { year });
+        if (data) {
+            renderMonthlyChart(data);
+        }
+    }
+
+    async function fetchTransactions() {
+        const month = document.getElementById('month-filter').value;
+        const year = document.getElementById('year-filter').value;
+        const data = await fetchFromGAS('getTransactionsByMonth', { month, year });
+        if (data) {
+            renderTransactions(data);
+        }
+    }
+
+    async function fetchCategories() {
+        const categories = await fetchFromGAS('getCategories');
+        if (categories) {
+            allCategories = categories;
+            populateCategorySelects(categories);
+        }
+    }
+    
+    async function fetchKeywords() {
+        const keywordsData = await fetchFromGAS('getKeywords');
+        if (keywordsData) {
+            renderKeywords(keywordsData);
+        }
+    }
+
+    async function searchTransactions() {
+        const params = {
+            content: document.getElementById('search-content').value,
+            amount: document.getElementById('search-amount').value,
+            category: document.getElementById('search-category').value,
+            month: document.getElementById('search-month').value,
+        };
+        const result = await fetchFromGAS('searchTransactions', params);
+        if (result && result.transactions) {
+            renderSearchResults(result.transactions);
+        }
+    }
+
+    function renderSummary(data) {
+        document.getElementById('totalIncome').textContent = formatCurrency(data.income);
+        document.getElementById('totalExpense').textContent = formatCurrency(data.expense);
+        document.getElementById('balance').textContent = formatCurrency(data.balance);
+    }
+    
+    function renderExpenseChart(data) {
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        if (expenseChartInstance) {
+            expenseChartInstance.destroy();
+        }
+        expenseChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.chartData.map(d => d.category),
+                datasets: [{
+                    label: 'Chi tiêu',
+                    data: data.chartData.map(d => d.amount),
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                        '#FFCD56', '#C9CBCF', '#3C8AFF', '#F67019', '#F53794', '#537BC4'
+                    ],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += formatCurrency(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function renderMonthlyChart(data) {
+        const ctx = document.getElementById('monthlyChart').getContext('2d');
+        const labels = data.map(d => `Tháng ${d.month}`);
+        if(monthlyChartInstance) {
+            monthlyChartInstance.destroy();
+        }
+        monthlyChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Thu nhập',
+                        data: data.map(d => d.income),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Chi tiêu',
+                        data: data.map(d => d.expense),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                           callback: function(value, index, values) {
+                                return formatCurrency(value);
+                           }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTransactions(transactions) {
+        const list = document.getElementById('transaction-list');
+        list.innerHTML = '';
+        if (transactions.length === 0) {
+            list.innerHTML = `<tr><td colspan="5" class="text-center py-4">Không có giao dịch nào.</td></tr>`;
+            return;
+        }
+        transactions.forEach(tx => {
+            const row = document.createElement('tr');
+            row.className = tx.type === 'Thu nhập' ? 'bg-green-50' : 'bg-red-50';
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${tx.date}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>${tx.content}</div>
+                    ${tx.note ? `<div class="text-xs text-gray-500">${tx.note}</div>` : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${tx.type === 'Thu nhập' ? 'text-green-600' : 'text-red-600'}">${formatCurrency(tx.amount)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tx.category}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick='openTransactionModal(${JSON.stringify(tx)})' class="text-indigo-600 hover:text-indigo-900 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick='deleteTransaction(${JSON.stringify(tx)})' class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    function renderKeywords(keywordsData) {
+        const container = document.getElementById('keyword-list');
+        container.innerHTML = '';
+        keywordsData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'p-4 border rounded-lg';
+            div.innerHTML = `
+                <h4 class="font-semibold text-lg">${item.icon} ${item.category}</h4>
+                <p class="text-gray-600 text-sm break-words"><strong>Từ khóa:</strong> ${item.keywords || 'Chưa có từ khóa'}</p>
+            `;
+            container.appendChild(div);
+        });
+    }
+    
+    function renderSearchResults(transactions) {
+        const container = document.getElementById('search-results');
+        container.innerHTML = '';
+        if (transactions.length === 0) {
+            container.innerHTML = `<p class="text-center text-gray-500 mt-4">Không tìm thấy kết quả nào.</p>`;
+            return;
+        }
+        const table = document.createElement('table');
+        table.className = "min-w-full divide-y divide-gray-200 mt-4";
+        table.innerHTML = `
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nội dung</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+            </tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+        transactions.forEach(tx => {
+            const row = document.createElement('tr');
+            row.className = tx.type === 'Thu nhập' ? 'bg-green-50' : 'bg-red-50';
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${tx.date}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>${tx.content}</div>
+                    ${tx.note ? `<div class="text-xs text-gray-500">${tx.note}</div>` : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${tx.type === 'Thu nhập' ? 'text-green-600' : 'text-red-600'}">${formatCurrency(tx.amount)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tx.category}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        container.appendChild(table);
+    }
+
+    // --- MODAL & FORM HANDLING ---
+    function openTransactionModal(tx = null) {
+        const form = document.getElementById('transactionForm');
+        form.reset();
+        if (tx) {
+            document.getElementById('modal-title').textContent = 'Sửa Giao Dịch';
+            document.getElementById('transactionId').value = tx.id;
+            document.getElementById('transactionType').value = tx.type;
+            // Date needs to be in YYYY-MM-DD format for input
+            const dateParts = tx.date.split('/');
+            document.getElementById('transactionDate').value = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+            document.getElementById('transactionContent').value = tx.content;
+            document.getElementById('transactionAmount').value = tx.amount;
+            document.getElementById('transactionCategory').value = tx.category;
+            document.getElementById('transactionNote').value = tx.note;
+        } else {
+            document.getElementById('modal-title').textContent = 'Thêm Giao Dịch Mới';
+            document.getElementById('transactionId').value = '';
+            document.getElementById('transactionDate').valueAsDate = new Date();
+        }
+        document.getElementById('transactionModal').style.display = 'block';
+    }
+
+    function closeTransactionModal() {
+        document.getElementById('transactionModal').style.display = 'none';
+    }
+
+    async function handleTransactionFormSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById('transactionId').value;
+        const dateValue = document.getElementById('transactionDate').value;
+        const [year, month, day] = dateValue.split('-');
+
+        const transaction = {
+            id: id,
+            type: document.getElementById('transactionType').value,
+            date: `${day}/${month}/${year}`, // Format to DD/MM/YYYY
+            content: document.getElementById('transactionContent').value,
+            amount: document.getElementById('transactionAmount').value,
+            category: document.getElementById('transactionCategory').value,
+            note: document.getElementById('transactionNote').value,
+        };
+
+        let result;
+        if (id) { // Update
+            result = await fetchFromGAS('updateTransaction', transaction, 'POST');
+        } else { // Add
+            result = await fetchFromGAS('addTransaction', transaction, 'POST');
+        }
+
+        if (result && result.success) {
+            closeTransactionModal();
+            fetchTransactions(); // Refresh the list
+            alert(id ? 'Cập nhật giao dịch thành công!' : 'Thêm giao dịch thành công!');
+        }
+    }
+
+    async function deleteTransaction(tx) {
+        if (confirm(`Bạn có chắc chắn muốn xóa giao dịch "${tx.content}"?`)) {
+            const dateParts = tx.date.split('/');
+            const month = parseInt(dateParts[1], 10);
+            const result = await fetchFromGAS('deleteTransaction', { id: tx.id, month: month }, 'POST');
+            if (result && result.success) {
+                fetchTransactions(); // Refresh the list
+                alert('Xóa giao dịch thành công!');
+            }
+        }
+    }
+
+    // --- INITIALIZATION & EVENT LISTENERS ---
+    function initializeDateFilters() {
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        document.getElementById('endDate').valueAsDate = today;
+        document.getElementById('startDate').valueAsDate = firstDayOfMonth;
+
+        const monthSelect = document.getElementById('month-filter');
+        const yearSelect = document.getElementById('year-filter');
+        const searchMonthSelect = document.getElementById('search-month');
+
+        for (let i = 1; i <= 12; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Tháng ${i}`;
+            monthSelect.appendChild(option.cloneNode(true));
+            searchMonthSelect.appendChild(option.cloneNode(true));
+        }
+        monthSelect.value = today.getMonth() + 1;
+        
+        const currentYear = today.getFullYear();
+        for (let i = currentYear; i >= currentYear - 5; i--) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Năm ${i}`;
+            yearSelect.appendChild(option);
+        }
+    }
+    
+    function populateCategorySelects(categories) {
+        const selects = [
+            document.getElementById('transactionCategory'),
+            document.getElementById('search-category')
+        ];
+        
+        selects.forEach(select => {
+            const currentVal = select.value;
+            // Clear existing options except the first one for search
+            if (select.id === 'search-category') {
+                 select.innerHTML = '<option value="">Tất cả danh mục</option>';
+            } else {
+                 select.innerHTML = '';
+            }
+
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+            select.value = currentVal;
+        });
+    }
+
+    function changeTab(tabName) {
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.add('hidden');
+        });
+        document.getElementById(tabName).classList.remove('hidden');
+
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.querySelector(`.tab-button[data-tab='${tabName}']`).classList.add('active');
+        
+        // Fetch data for the new tab if needed
+        if (tabName === 'charts') {
+            fetchMonthlyChartData();
+        } else if (tabName === 'transactions') {
+            fetchTransactions();
+        } else if (tabName === 'keywords') {
+            fetchKeywords();
+        }
+    }
+
+    window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        API_URL = params.get('api');
+        SHEET_ID = params.get('sheetId');
+
+        if (!API_URL || !SHEET_ID) {
+            document.body.innerHTML = `<div class="p-4 text-red-600 bg-red-100 rounded-md">Lỗi: Thiếu 'api' hoặc 'sheetId' trong URL.</div>`;
+            showLoader(false);
+            return;
+        }
+
+        initializeDateFilters();
+        fetchDashboardData();
+        fetchCategories();
+        
+        document.getElementById('transactionForm').addEventListener('submit', handleTransactionFormSubmit);
+    };
+
+</script>
+
 </body>
 </html>
