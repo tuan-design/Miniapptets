@@ -1,1 +1,20 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+}
 
+canvas {
+    display: block;
+}
+
+#loading-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    font-family: sans-serif;
+    text-align: center;
+}
