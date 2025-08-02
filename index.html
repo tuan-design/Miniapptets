@@ -1,553 +1,1190 @@
-
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <!-- ==========================================================================
-       1. Thiết lập Meta và Liên kết
-       Cấu hình meta, favicon, font và các thư viện bên ngoài.
-       ========================================================================== -->
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Mini App Tổng Quan Chi Tiêu</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Sổ Tay Tài Chính</title>
+  <style>
+    :root {
+      --primary-color: #4CAF50;
+      --secondary-color: #2196F3;
+      --income-color: #4CAF50;
+      --expense-color: #F44336;
+      --background-color: #f0f2f5;
+      --card-background: #ffffff;
+      --text-color: #333;
+      --light-text-color: #666;
+      --border-color: #e0e0e0;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      font-family: var(--font-family);
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 10px;
+    }
+    .header {
+      text-align: center;
+      padding: 15px 0;
+      background-color: var(--primary-color);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 4px var(--shadow-color);
+    }
+    .tabs {
+      display: flex;
+      justify-content: space-around;
+      background-color: var(--card-background);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 60px;
+      z-index: 999;
+      box-shadow: 0 1px 3px var(--shadow-color);
+    }
+    .tab-button {
+      flex: 1;
+      padding: 12px 0;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--light-text-color);
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+    .tab-button.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+    .tab-content {
+      display: none;
+      padding-top: 15px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .card {
+      background-color: var(--card-background);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+    h2, h3 {
+      margin-top: 0;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .summary-item {
+      background-color: var(--background-color);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      position: relative;
+    }
+    .summary-item p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--light-text-color);
+    }
+    .summary-item h4 {
+      margin: 5px 0 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .summary-item .income { color: var(--income-color); }
+    .summary-item .expense { color: var(--expense-color); }
+    .summary-item .balance { color: var(--secondary-color); }
+    
+    .chart-container {
+      height: 300px;
+      position: relative;
+      margin-top: 20px;
+    }
+    .chart-container canvas {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .category-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .category-list li {
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .category-list li:last-child {
+      border-bottom: none;
+    }
+    .category-list .label {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    .category-list .amount {
+      color: var(--light-text-color);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .form-group textarea {
+      resize: vertical;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .btn-secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    .btn-danger {
+      background-color: var(--expense-color);
+      color: white;
+    }
+    .btn-outline {
+      background-color: transparent;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+    }
+    .btn-primary:hover { background-color: #43a047; }
+    .btn-secondary:hover { background-color: #1e88e5; }
+    .btn-danger:hover { background-color: #e53935; }
+    
+    .loading-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
+      font-size: 16px;
+      color: var(--light-text-color);
+    }
+    .loading-indicator.hidden {
+      display: none;
+    }
+    .transaction-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .transaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .transaction-item:hover {
+      background-color: #f9f9f9;
+    }
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+    .transaction-item .info {
+      flex: 1;
+      margin-right: 15px;
+    }
+    .transaction-item .amount {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .transaction-item .amount.income { color: var(--income-color); }
+    .transaction-item .amount.expense { color: var(--expense-color); }
+    .transaction-item h4 {
+      margin: 0 0 5px 0;
+      font-size: 16px;
+    }
+    .transaction-item p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--light-text-color);
+    }
+    .date-filter {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .date-filter input {
+      flex: 1;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      padding-top: 60px;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px var(--shadow-color);
+      position: relative;
+    }
+    .close-button {
+      color: #aaa;
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-button:hover, .close-button:focus {
+      color: #333;
+      text-decoration: none;
+    }
+    #addTransactionForm {
+      margin-top: 20px;
+    }
+    .search-input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .search-input-group input {
+      flex: 1;
+    }
+    #searchTransactionBtn {
+      flex: 0;
+      padding: 10px 15px;
+    }
+    #keywordList .card, #searchResult .card {
+      padding: 15px;
+    }
+    #keywordList h4 {
+      font-size: 16px;
+      color: var(--text-color);
+      margin: 0 0 10px 0;
+    }
+    .keyword-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+    .keyword-item:last-child {
+      border-bottom: none;
+    }
+    .keyword-item .keyword-text {
+      flex: 1;
+      color: var(--light-text-color);
+      margin-right: 10px;
+    }
+    .keyword-item .delete-btn {
+      color: var(--expense-color);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #addKeywordForm, #addCategoryForm {
+      margin-top: 15px;
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 250px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -125px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .tooltip .tooltiptext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    .button-container .btn {
+      flex-grow: 1;
+      width: auto;
+    }
+  </style>
 </head>
 <body>
-  <!-- ==========================================================================
-       2. Thanh Điều Hướng (Header và Navigation)
-       Cấu trúc header và thanh điều hướng cố định trên cùng.
-       ========================================================================== -->
-  <div class="app-header">
-    <h3>©masterhmh</h3>
-  </div>
-  <div class="top-nav">
-    <div class="nav-item active" data-tab="tab1"><i class="fas fa-list"></i><span>Giao dịch</span></div>
-    <div class="nav-item" data-tab="tab2"><i class="fas fa-table"></i><span>Thống kê</span></div>
-    <div class="nav-item" data-tab="tab3"><i class="fas fa-chart-bar"></i><span>Biểu đồ</span></div>
-    
-    <div class="nav-item" data-tab="tab5"><i class="fas fa-money-bill-wave"></i><span>Liệt kê</span></div>
-    <div class="nav-item" data-tab="tab6"><i class="fas fa-search"></i><span>Tìm kiếm</span></div>
-    <div class="nav-item" data-tab="tab7"><i class="fas fa-key"></i><span>Từ khóa</span></div>
-  </div>
+  <div class="container">
+    <div class="header">
+      <h2>Sổ Tay Tài Chính</h2>
+    </div>
 
-  <!-- ==========================================================================
-       3. Nội Dung Chính (Content Wrapper)
-       Container chính chứa các tab nội dung.
-       ========================================================================== -->
-  <div class="content-wrapper">
-    <!-- Tab 1: Giao Dịch Trong Ngày -->
+    <div class="tabs">
+      <div class="tab-button active" onclick="openTab(event, 'tab1')">Tổng Quan</div>
+      <div class="tab-button" onclick="openTab(event, 'tab2')">Giao Dịch</div>
+      <div class="tab-button" onclick="openTab(event, 'tab3')">Biểu Đồ</div>
+      <div class="tab-button" onclick="openTab(event, 'tab4')">Tìm Kiếm</div>
+      <div class="tab-button" onclick="openTab(event, 'tab5')">Phân Loại</div>
+    </div>
+
     <div id="tab1" class="tab-content active">
-      <h1>GIAO DỊCH TRONG NGÀY</h1>
-      <p class="notification">Vui lòng chọn ngày và ấn "Lọc" để xem dữ liệu.</p>
-      <div id="errorMessageTab1" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab1" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab1" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      <div class="card">
+        <h3>Tổng Quan Tài Chính</h3>
+        <div class="date-filter">
+          <input type="date" id="startDate" class="date-filter-input">
+          <input type="date" id="endDate" class="date-filter-input">
+        </div>
+        <div class="summary-grid" id="summaryGrid">
+          <div class="summary-item">
+            <p>Thu Nhập</p>
+            <h4 class="income" id="totalIncome">0 VNĐ</h4>
+          </div>
+          <div class="summary-item">
+            <p>Chi Tiêu</p>
+            <h4 class="expense" id="totalExpense">0 VNĐ</h4>
+          </div>
+          <div class="summary-item">
+            <p>Số Dư</p>
+            <h4 class="balance" id="totalBalance">0 VNĐ</h4>
+          </div>
+        </div>
       </div>
-      <div class="input-group">
-        Ngày: <input type="date" id="transactionDate">
-        <button id="fetchTransactionsBtn">Lọc</button>
-        <button id="addTransactionBtn">Thêm</button>
+      
+      <div class="card">
+        <h3>Chi Tiêu Theo Phân Loại</h3>
+        <div class="loading-indicator" id="categoryLoading">Đang tải...</div>
+        <ul class="category-list" id="expenseCategoryList"></ul>
       </div>
-      <div class="stats-container" id="dailySummary">
-        <div class="stat-box income"><div class="title">Tổng thu nhập</div><div class="amount">0đ</div></div>
-        <div class="stat-box expense"><div class="title">Tổng chi tiêu</div><div class="amount">0đ</div></div>
-        <div class="stat-box balance"><div class="title">Số dư</div><div class="amount">0đ</div></div>
-      </div>
-      <div class="transactions-list" id="transactionsContainer"></div>
-      <div id="pagination" style="text-align: center; margin-top: 1rem;">
-        <button id="prevPage" class="pagination-btn" disabled>Trang trước</button>
-        <span id="pageInfo"></span>
-        <button id="nextPage" class="pagination-btn">Trang sau</button>
+
+      <div class="card">
+        <h3>Thu Chi Theo Tháng</h3>
+        <div class="loading-indicator" id="monthlyChartLoading">Đang tải...</div>
+        <div class="chart-container">
+          <canvas id="monthlyChart"></canvas>
+        </div>
       </div>
     </div>
 
-    <!-- Tab 2: Thống Kê -->
     <div id="tab2" class="tab-content">
-      <h1>THỐNG KÊ</h1>
-      <p class="notification">Vui lòng chọn khoảng thời gian và ấn "Lọc" để xem dữ liệu.</p>
-      <div id="errorMessageTab2" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab2" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab2" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      <div class="card">
+        <h3>Thêm Giao Dịch</h3>
+        <div class="button-container">
+          <button class="btn btn-primary" onclick="openAddTransactionModal('Thu nhập')">Thêm Thu Nhập</button>
+          <button class="btn btn-danger" onclick="openAddTransactionModal('Chi tiêu')">Thêm Chi Tiêu</button>
+        </div>
       </div>
-      <div class="input-group">
-        Từ: <input type="date" id="startDate">
-        Đến: <input type="date" id="endDate">
-        <button id="fetchDataBtn">Lọc</button>
+
+      <div class="card">
+        <h3>Giao Dịch Gần Nhất</h3>
+        <div class="form-group">
+          <select id="transactionMonthFilter">
+            <option value="current">Tháng này</option>
+            <option value="1">Tháng 1</option>
+            <option value="2">Tháng 2</option>
+            <option value="3">Tháng 3</option>
+            <option value="4">Tháng 4</option>
+            <option value="5">Tháng 5</option>
+            <option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option>
+            <option value="8">Tháng 8</option>
+            <option value="9">Tháng 9</option>
+            <option value="10">Tháng 10</option>
+            <option value="11">Tháng 11</option>
+            <option value="12">Tháng 12</option>
+          </select>
+        </div>
+        <div class="loading-indicator" id="transactionLoading">Đang tải...</div>
+        <ul class="transaction-list" id="recentTransactions"></ul>
       </div>
-      <div class="stats-container" id="statsContainer">
-        <div class="stat-box income"><div class="title">Tổng thu nhập</div><div class="amount">0đ</div></div>
-        <div class="stat-box expense"><div class="title">Tổng chi tiêu</div><div class="amount">0đ</div></div>
-        <div class="stat-box balance"><div class="title">Số dư</div><div class="amount">0đ</div></div>
-      </div>
-      <div class="chart-container">
-        <h1>BIỂU ĐỒ CHI TIÊU</h1>
-        <canvas id="myChart"></canvas>
-      </div>
-      <div class="custom-legend" id="customLegend"></div>
     </div>
 
-    <!-- Tab 3: Biểu Đồ Thu Chi Theo Tháng -->
     <div id="tab3" class="tab-content">
-      <h1>BIỂU ĐỒ THU CHI THEO THÁNG</h1>
-      <p class="notification">Vui lòng chọn khoảng thời gian và ấn "Lọc" để xem dữ liệu.</p>
-      <div id="errorMessageTab3" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab3" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab3" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group">
-        Từ:
-        <select id="startMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        Đến:
-        <select id="endMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        <button id="fetchMonthlyDataBtn">Lọc</button>
-      </div>
-      <div class="chart-container">
-        <canvas id="monthlyChart"></canvas>
-        <div class="monthly-legend" id="monthlyLegend"></div>
-      </div>
-    </div>
-    
-    
-
-    <!-- Tab 5: Chi Tiêu Trong Tháng -->
-    <div id="tab5" class="tab-content">
-      <h1>CHI TIÊU TRONG THÁNG</h1>
-      <p class="notification">Vui lòng chọn tháng và ấn "Lọc" để xem dữ liệu.</p>
-      <div id="errorMessageTab5" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab5" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab5" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group">
-        Tháng:
-        <select id="expenseMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        <button id="fetchMonthlyExpensesBtn">Lọc</button>
-      </div>
-      <div class="stats-container" id="monthlyExpenseSummary">
-        <div class="stat-box income"><div class="title">Tổng thu nhập</div><div class="amount">0đ</div></div>
-        <div class="stat-box expense"><div class="title">Tổng chi tiêu</div><div class="amount">0đ</div></div>
-        <div class="stat-box balance"><div class="title">Số dư</div><div class="amount">0đ</div></div>
-      </div>
-      <div class="transactions-list" id="monthlyExpensesContainer"></div>
-      <div id="paginationMonthly" style="text-align: center; margin-top: 1rem;">
-        <button id="prevPageMonthly" class="pagination-btn" disabled>Trang trước</button>
-        <span id="pageInfoMonthly"></span>
-        <button id="nextPageMonthly" class="pagination-btn">Trang sau</button>
-      </div>
-    </div>
-
-    <!-- Tab 6: Tìm Kiếm Giao Dịch -->
-    <div id="tab6" class="tab-content">
-      <h1>TÌM KIẾM GIAO DỊCH</h1>
-      <p class="notification">Nhập ít nhất một tiêu chí (nội dung, số tiền, hoặc phân loại chi tiết) để tìm kiếm. Tháng là tùy chọn.</p>
-      <div id="errorMessageTab6" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab6" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab6" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group vertical">
-        <div class="input-field">
-          <label>Tháng: </label>
-          <select id="searchMonth" class="uniform-input">
-            <option value="">Tất cả</option>
-            <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-            <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-            <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+      <div class="card">
+        <h3>Phân Tích Chi Tiêu</h3>
+        <div class="form-group">
+          <select id="chartDateFilter">
+            <option value="currentMonth">Tháng này</option>
+            <option value="1">Tháng 1</option>
+            <option value="2">Tháng 2</option>
+            <option value="3">Tháng 3</option>
+            <option value="4">Tháng 4</option>
+            <option value="5">Tháng 5</option>
+            <option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option>
+            <option value="8">Tháng 8</option>
+            <option value="9">Tháng 9</option>
+            <option value="10">Tháng 10</option>
+            <option value="11">Tháng 11</option>
+            <option value="12">Tháng 12</option>
           </select>
         </div>
-        <div class="input-field">
-          <label>Nội dung: </label>
-          <input type="text" id="searchContent" class="uniform-input" placeholder="Nhập nội dung">
+        <div class="loading-indicator" id="chartLoading">Đang tải...</div>
+        <div class="chart-container">
+          <canvas id="expensePieChart"></canvas>
         </div>
-        <div class="input-field">
-          <label>Số tiền: </label>
-          <input type="text" id="searchAmount" class="uniform-input" placeholder="Nhập số tiền (VD: 50.000)">
-        </div>
-        <div class="input-field">
-          <label>Phân loại chi tiết: </label>
-          <select id="searchCategory" class="uniform-input">
-            <option value="">Tất cả</option>
-          </select>
-        </div>
-        <button id="searchTransactionsBtn">Tìm kiếm</button>
-      </div>
-      <div class="transactions-list" id="searchResultsContainer"></div>
-      <div id="paginationSearch">
-        <button id="prevPageSearch" class="pagination-btn" disabled>Trang trước</button>
-        <span id="pageInfoSearch"></span>
-        <button id="nextPageSearch" class="pagination-btn">Trang sau</button>
       </div>
     </div>
 
-    <!-- Tab 7: Quản Lý Từ Khóa -->
-    <div id="tab7" class="tab-content">
-      <h1>QUẢN LÝ TỪ KHÓA</h1>
-      <p class="notification">Chọn phân loại chi tiết và nhập từ khóa để thêm hoặc xóa khỏi sheet Từ khóa.</p>
-      <div id="errorMessageTab7" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab7" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab7" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group vertical">
-        <div class="input-field">
-          <label>Phân loại chi tiết: </label>
-          <select id="keywordCategory" class="uniform-input">
-            <option value="">Chọn phân loại</option>
-          </select>
-        </div>
-        <div class="input-field">
-          <label>Từ khóa: </label>
-          <input type="text" id="keywordInput" class="uniform-input" placeholder="Nhập từ khóa (VD: đổ dầu, đổ xăng)">
-        </div>
-        <div class="button-group">
-          <button id="addKeywordBtn">Thêm từ khóa</button>
-          <button id="deleteKeywordBtn">Xóa từ khóa</button>
-        </div>
-        <button id="fetchKeywordsBtn">Tải dữ liệu</button>
-      </div>
-      <div class="keywords-list" id="keywordsContainer"></div>
-    </div>
-
-    <!-- ==========================================================================
-         4. Modal và Popup
-         Các modal để chỉnh sửa, thêm, xóa giao dịch.
-         ========================================================================== -->
-    <div id="editModal" class="modal">
-      <div class="modal-content">
-        <h2>Chỉnh sửa giao dịch</h2>
-        <div id="editError" class="error-message"></div>
-        <form id="editForm">
-          <label for="editTransactionId">Mã giao dịch:</label>
-          <input type="text" id="editTransactionId" readonly>
-          <label for="editDate">Ngày:</label>
-          <input type="date" id="editDate" required>
-          <label for="editContent">Nội dung:</label>
-          <input type="text" id="editContent" placeholder="Nhập nội dung giao dịch" required>
-          <label for="editAmount">Số tiền:</label>
-          <input type="text" id="editAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
-          <label for="editType">Phân loại:</label>
-          <select id="editType" required>
-            <option value="Thu nhập">Thu nhập</option>
-            <option value="Chi tiêu">Chi tiêu</option>
-          </select>
-          <label for="editCategory">Phân loại chi tiết:</label>
-          <select id="editCategory" required></select>
-          <label for="editNote">Ghi chú (nếu có):</label>
-          <textarea id="editNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
-          <div class="btn-group">
-            <button type="button" class="cancel-btn" onclick="closeEditForm()">Hủy</button>
-            <button type="submit" class="save-btn">Lưu</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="addModal" class="modal">
-      <div class="modal-content">
-        <h2>Thêm giao dịch mới</h2>
-        <div id="addError" class="error-message"></div>
-        <form id="addForm">
-          <label for="addDate">Ngày:</label>
-          <input type="date" id="addDate" required>
-          <label for="addContent">Nội dung:</label>
-          <input type="text" id="addContent" placeholder="Nhập nội dung giao dịch" required>
-          <label for="addAmount">Số tiền:</label>
-          <input type="text" id="addAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
-          <label for="addType">Phân loại:</label>
-          <select id="addType" required>
-            <option value="Thu nhập">Thu nhập</option>
-            <option value="Chi tiêu">Chi tiêu</option>
-          </select>
-          <label for="addCategory">Phân loại chi tiết:</label>
-          <select id="addCategory" required></select>
-          <label for="addNote">Ghi chú (nếu có):</label>
-          <textarea id="addNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
-          <div class="btn-group">
-            <button type="button" class="cancel-btn" onclick="closeAddForm()">Hủy</button>
-            <button type="submit" class="save-btn">Lưu</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="confirmDeleteModal" class="modal">
-      <div class="modal-content">
-        <h2>Xác nhận xóa</h2>
-        <p>Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.</p>
-        <div class="btn-group">
-          <button type="button" class="cancel-btn" onclick="closeConfirmDeleteModal()">Hủy</button>
-          <button type="button" class="save-btn" id="confirmDeleteBtn">Xóa</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================================================
-       5. Script Liên Kết
-       Liên kết tới các file JavaScript.
-       ========================================================================== -->
-    <script src="script.js"></script>
-</body>
-</html>
-        Từ:
-        <select id="startMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        Đến:
-        <select id="endMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        <button id="fetchMonthlyDataBtn">Lọc</button>
-      </div>
-      <div class="chart-container">
-        <canvas id="monthlyChart"></canvas>
-        <div class="monthly-legend" id="monthlyLegend"></div>
-      </div>
-    </div>
-    
-    <!-- Tab 4: Giới Thiệu -->
     <div id="tab4" class="tab-content">
-      <h1>GIỚI THIỆU</h1>
-      <div class="info-section">
-        <div class="info-card">
-          <h1>Về MiniApp</h1>
-          <p class="custom-text">Miniapp tài chính trên Telegram giúp bạn theo dõi thu nhập và chi tiêu dễ dàng. Dựa vào dữ liệu trong Google Sheet, nó sẽ hiển thị danh sách giao dịch trong ngày, biểu đồ chi tiêu theo phân loại chi tiết và biểu đồ thu nhập – chi tiêu hàng tháng ngay trong Telegram.</p>
+      <div class="card">
+        <h3>Tìm Kiếm Giao Dịch</h3>
+        <div class="form-group">
+          <label for="searchMonth">Tháng</label>
+          <select id="searchMonth">
+            <option value="">Tất cả các tháng</option>
+            <option value="1">Tháng 1</option>
+            <option value="2">Tháng 2</option>
+            <option value="3">Tháng 3</option>
+            <option value="4">Tháng 4</option>
+            <option value="5">Tháng 5</option>
+            <option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option>
+            <option value="8">Tháng 8</option>
+            <option value="9">Tháng 9</option>
+            <option value="10">Tháng 10</option>
+            <option value="11">Tháng 11</option>
+            <option value="12">Tháng 12</option>
+          </select>
         </div>
-        <div class="info-card">
-          <h1>Ủng Hộ</h1>
-          <p class="custom-text">Nếu bạn thấy nó hữu ích, hãy ủng hộ mình một ly cà phê để có thêm động lực duy trì và phát triển nhé!</p>
-          <p><i class="fas fa-university" style="color: var(--primary-color);"></i><strong>Ngân hàng:</strong> TMCP Sài Gòn – Hà Nội (SHB)</p>
-          <p><i class="fas fa-user" style="color: var(--primary-color);"></i><strong>Chủ tài khoản:</strong> Hoang Manh Hung</p>
-          <p><i class="fas fa-credit-card" style="color: var(--primary-color);"></i><strong>Số tài khoản:</strong> 6666.6789.9999</p>
+        <div class="form-group">
+          <label for="searchContent">Nội dung</label>
+          <input type="text" id="searchContent" placeholder="Nhập từ khóa nội dung">
         </div>
-        <div class="qr-container">
-          <a href="https://momo.vn/" target="_blank" class="cta-button">Ủng hộ ngay</a>
-          <div class="qr-frame">
-            <img id="qrImage" src="https://i.pinimg.com/736x/7c/13/53/7c135389e26cbc6460626deb9e2aa5c6.jpg" alt="QR Code" class="qr-image">
-          </div>
-          <p class="qr-caption">Quét mã QR để ủng hộ qua Momo</p>
+        <div class="form-group">
+          <label for="searchAmount">Số tiền</label>
+          <input type="number" id="searchAmount" placeholder="Nhập số tiền">
         </div>
-        <div class="info-card">
-          <h1>Liên Hệ</h1>
-          <div class="contact-columns">
-            <p><i class="fab fa-telegram-plane" style="color: var(--primary-color);"></i><strong>Telegram:</strong> <a href="https://t.me/masterhmh" target="_blank">@masterhmh</a></p>
-            <p><i class="fab fa-facebook" style="color: var(--primary-color);"></i><strong>Facebook:</strong> <a href="https://facebook.com/masterhmh" target="_blank">facebook.com/masterhmh</a></p>
-            </div>
+        <div class="form-group">
+          <label for="searchCategory">Phân loại chi tiết</label>
+          <input type="text" id="searchCategory" placeholder="Nhập phân loại">
         </div>
+        <button class="btn btn-primary" onclick="searchTransactions()">Tìm Kiếm</button>
+      </div>
+
+      <div class="card" id="searchResult">
+        <h3>Kết Quả Tìm Kiếm</h3>
+        <div class="loading-indicator" id="searchLoading"></div>
+        <ul class="transaction-list" id="searchResultsList"></ul>
       </div>
     </div>
 
-    <!-- Tab 5: Chi Tiêu Trong Tháng -->
     <div id="tab5" class="tab-content">
-      <h1>CHI TIÊU TRONG THÁNG</h1>
-      <p class="notification">Vui lòng chọn tháng và ấn "Lọc" để xem dữ liệu.</p>
-      <div id="errorMessageTab5" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab5" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab5" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+      <div class="card">
+        <h3>Quản Lý Phân Loại & Từ Khóa</h3>
+        <div class="form-group">
+          <label for="addKeywordCategory">Phân loại</label>
+          <input type="text" id="addKeywordCategory" placeholder="Nhập phân loại (VD: Ăn uống)">
+        </div>
+        <div class="form-group">
+          <label for="addKeywordText">Từ khóa <span class="tooltip">?
+            <span class="tooltiptext">Các từ khóa giúp bot tự động phân loại giao dịch. Ví dụ: 'cà phê, trà sữa' cho danh mục 'Giải trí'.</span>
+          </span></label>
+          <textarea id="addKeywordText" placeholder="Nhập từ khóa, cách nhau bởi dấu phẩy"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="addKeyword()">Lưu Từ Khóa</button>
       </div>
-      <div class="input-group">
-        Tháng:
-        <select id="expenseMonth">
-          <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-          <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-          <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-          <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-        </select>
-        <button id="fetchMonthlyExpensesBtn">Lọc</button>
-      </div>
-      <div class="stats-container" id="monthlyExpenseSummary">
-        <div class="stat-box income"><div class="title">Tổng thu nhập</div><div class="amount">0đ</div></div>
-        <div class="stat-box expense"><div class="title">Tổng chi tiêu</div><div class="amount">0đ</div></div>
-        <div class="stat-box balance"><div class="title">Số dư</div><div class="amount">0đ</div></div>
-      </div>
-      <div class="transactions-list" id="monthlyExpensesContainer"></div>
-      <div id="paginationMonthly" style="text-align: center; margin-top: 1rem;">
-        <button id="prevPageMonthly" class="pagination-btn" disabled>Trang trước</button>
-        <span id="pageInfoMonthly"></span>
-        <button id="nextPageMonthly" class="pagination-btn">Trang sau</button>
+
+      <div class="card">
+        <h3>Danh Sách Từ Khóa</h3>
+        <div class="loading-indicator" id="keywordsLoading">Đang tải...</div>
+        <div id="keywordList"></div>
       </div>
     </div>
 
-    <!-- Tab 6: Tìm Kiếm Giao Dịch -->
-    <div id="tab6" class="tab-content">
-      <h1>TÌM KIẾM GIAO DỊCH</h1>
-      <p class="notification">Nhập ít nhất một tiêu chí (nội dung, số tiền, hoặc phân loại chi tiết) để tìm kiếm. Tháng là tùy chọn.</p>
-      <div id="errorMessageTab6" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab6" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab6" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group vertical">
-        <div class="input-field">
-          <label>Tháng: </label>
-          <select id="searchMonth" class="uniform-input">
-            <option value="">Tất cả</option>
-            <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-            <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-            <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-          </select>
-        </div>
-        <div class="input-field">
-          <label>Nội dung: </label>
-          <input type="text" id="searchContent" class="uniform-input" placeholder="Nhập nội dung">
-        </div>
-        <div class="input-field">
-          <label>Số tiền: </label>
-          <input type="text" id="searchAmount" class="uniform-input" placeholder="Nhập số tiền (VD: 50.000)">
-        </div>
-        <div class="input-field">
-          <label>Phân loại chi tiết: </label>
-          <select id="searchCategory" class="uniform-input">
-            <option value="">Tất cả</option>
-          </select>
-        </div>
-        <button id="searchTransactionsBtn">Tìm kiếm</button>
-      </div>
-      <div class="transactions-list" id="searchResultsContainer"></div>
-      <div id="paginationSearch">
-        <button id="prevPageSearch" class="pagination-btn" disabled>Trang trước</button>
-        <span id="pageInfoSearch"></span>
-        <button id="nextPageSearch" class="pagination-btn">Trang sau</button>
-      </div>
-    </div>
+  </div>
 
-    <!-- Tab 7: Quản Lý Từ Khóa -->
-    <div id="tab7" class="tab-content">
-      <h1>QUẢN LÝ TỪ KHÓA</h1>
-      <p class="notification">Chọn phân loại chi tiết và nhập từ khóa để thêm hoặc xóa khỏi sheet Từ khóa.</p>
-      <div id="errorMessageTab7" style="color: red; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="successMessageTab7" style="color: green; text-align: center; display: none; margin-bottom: 1rem;"></div>
-      <div id="loadingTab7" style="display: none; text-align: center; margin: 1rem 0;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary-color);"></i>
-      </div>
-      <div class="input-group vertical">
-        <div class="input-field">
-          <label>Phân loại chi tiết: </label>
-          <select id="keywordCategory" class="uniform-input">
-            <option value="">Chọn phân loại</option>
-          </select>
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" onclick="closeModal()">&times;</span>
+      <h3 id="modalTitle">Thêm Giao Dịch</h3>
+      <form id="transactionForm">
+        <input type="hidden" id="transactionId">
+        <input type="hidden" id="transactionType">
+        <div class="form-group">
+          <label for="transactionDate">Ngày</label>
+          <input type="date" id="transactionDate" required>
         </div>
-        <div class="input-field">
-          <label>Từ khóa: </label>
-          <input type="text" id="keywordInput" class="uniform-input" placeholder="Nhập từ khóa (VD: đổ dầu, đổ xăng)">
+        <div class="form-group">
+          <label for="transactionContent">Nội dung</label>
+          <input type="text" id="transactionContent" required>
         </div>
-        <div class="button-group">
-          <button id="addKeywordBtn">Thêm từ khóa</button>
-          <button id="deleteKeywordBtn">Xóa từ khóa</button>
+        <div class="form-group">
+          <label for="transactionAmount">Số tiền</label>
+          <input type="number" id="transactionAmount" required>
         </div>
-        <button id="fetchKeywordsBtn">Tải dữ liệu</button>
-      </div>
-      <div class="keywords-list" id="keywordsContainer"></div>
-    </div>
-
-    <!-- ==========================================================================
-         4. Modal và Popup
-         Các modal để chỉnh sửa, thêm, xóa giao dịch.
-         ========================================================================== -->
-    <div id="editModal" class="modal">
-      <div class="modal-content">
-        <h2>Chỉnh sửa giao dịch</h2>
-        <div id="editError" class="error-message"></div>
-        <form id="editForm">
-          <label for="editTransactionId">Mã giao dịch:</label>
-          <input type="text" id="editTransactionId" readonly>
-          <label for="editDate">Ngày:</label>
-          <input type="date" id="editDate" required>
-          <label for="editContent">Nội dung:</label>
-          <input type="text" id="editContent" placeholder="Nhập nội dung giao dịch" required>
-          <label for="editAmount">Số tiền:</label>
-          <input type="text" id="editAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
-          <label for="editType">Phân loại:</label>
-          <select id="editType" required>
-            <option value="Thu nhập">Thu nhập</option>
-            <option value="Chi tiêu">Chi tiêu</option>
-          </select>
-          <label for="editCategory">Phân loại chi tiết:</label>
-          <select id="editCategory" required></select>
-          <label for="editNote">Ghi chú (nếu có):</label>
-          <textarea id="editNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
-          <div class="btn-group">
-            <button type="button" class="cancel-btn" onclick="closeEditForm()">Hủy</button>
-            <button type="submit" class="save-btn">Lưu</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="addModal" class="modal">
-      <div class="modal-content">
-        <h2>Thêm giao dịch mới</h2>
-        <div id="addError" class="error-message"></div>
-        <form id="addForm">
-          <label for="addDate">Ngày:</label>
-          <input type="date" id="addDate" required>
-          <label for="addContent">Nội dung:</label>
-          <input type="text" id="addContent" placeholder="Nhập nội dung giao dịch" required>
-          <label for="addAmount">Số tiền:</label>
-          <input type="text" id="addAmount" placeholder="Nhập số tiền (VD: 5.000)" required>
-          <label for="addType">Phân loại:</label>
-          <select id="addType" required>
-            <option value="Thu nhập">Thu nhập</option>
-            <option value="Chi tiêu">Chi tiêu</option>
-          </select>
-          <label for="addCategory">Phân loại chi tiết:</label>
-          <select id="addCategory" required></select>
-          <label for="addNote">Ghi chú (nếu có):</label>
-          <textarea id="addNote" placeholder="Nhập ghi chú (tùy chọn)"></textarea>
-          <div class="btn-group">
-            <button type="button" class="cancel-btn" onclick="closeAddForm()">Hủy</button>
-            <button type="submit" class="save-btn">Lưu</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="confirmDeleteModal" class="modal">
-      <div class="modal-content">
-        <h2>Xác nhận xóa</h2>
-        <p>Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.</p>
+        <div class="form-group">
+          <label for="transactionCategory">Phân loại chi tiết</label>
+          <input type="text" list="categoryOptions" id="transactionCategory" required>
+          <datalist id="categoryOptions"></datalist>
+        </div>
+        <div class="form-group">
+          <label for="transactionNote">Ghi chú</label>
+          <textarea id="transactionNote"></textarea>
+        </div>
         <div class="btn-group">
-          <button type="button" class="cancel-btn" onclick="closeConfirmDeleteModal()">Hủy</button>
-          <button type="button" class="save-btn" id="confirmDeleteBtn">Xóa</button>
+          <button type="submit" class="btn btn-primary" id="saveTransactionBtn">Lưu Giao Dịch</button>
+          <button type="button" class="btn btn-danger" id="deleteTransactionBtn" style="display: none;">Xóa</button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 
-  <!-- ==========================================================================
-       5. Script Liên Kết
-       Liên kết tới các file JavaScript.
-       ========================================================================== -->
-    <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <script>
+    var globalState = {
+      sheetId: "<?= SHEET_ID ?>",
+      api: "<?= ScriptApp.getService().getUrl() ?>",
+      transactionCache: [],
+      categoriesCache: [],
+      keywordsCache: []
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Thiết lập ngày mặc định
+      var today = new Date();
+      var yyyy = today.getFullYear();
+      var mm = String(today.getMonth() + 1).padStart(2, '0');
+      var dd = String(today.getDate()).padStart(2, '0');
+      var todayStr = yyyy + '-' + mm + '-' + dd;
+      document.getElementById('startDate').value = yyyy + '-' + mm + '-01';
+      document.getElementById('endDate').value = todayStr;
+      document.getElementById('transactionDate').value = todayStr;
+
+      // Thiết lập tháng mặc định cho các bộ lọc
+      var currentMonth = today.getMonth() + 1;
+      document.getElementById('transactionMonthFilter').value = currentMonth;
+      document.getElementById('chartDateFilter').value = 'currentMonth';
+
+      // Load dữ liệu ban đầu
+      loadAllData();
+
+      // Gán sự kiện cho các bộ lọc
+      document.getElementById('startDate').addEventListener('change', loadSummary);
+      document.getElementById('endDate').addEventListener('change', loadSummary);
+      document.getElementById('transactionMonthFilter').addEventListener('change', loadTransactionsByMonth);
+      document.getElementById('chartDateFilter').addEventListener('change', loadExpensePieChart);
+
+      // Gán sự kiện cho form
+      document.getElementById('transactionForm').addEventListener('submit', handleTransactionSubmit);
+    });
+
+    function openTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab-content");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tab-button");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+      
+      // Load dữ liệu khi chuyển tab
+      if (tabName === 'tab1') loadSummary();
+      if (tabName === 'tab2') loadTransactionsByMonth();
+      if (tabName === 'tab3') loadExpensePieChart();
+      if (tabName === 'tab5') loadKeywords();
+    }
+
+    // --- Các hàm gọi Apps Script ---
+    function callAppsScript(action, params = {}, successHandler, errorHandler) {
+      showLoading(action);
+      const url = `${globalState.api}?action=${action}&sheetId=${globalState.sheetId}&${new URLSearchParams(params).toString()}`;
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            errorHandler(data.error);
+          } else {
+            successHandler(data);
+          }
+          hideLoading(action);
+        })
+        .catch(error => {
+          console.error("Error calling Apps Script:", error);
+          errorHandler("Lỗi kết nối: " + error.message);
+          hideLoading(action);
+        });
+    }
+
+    function callAppsScriptPost(action, payload, successHandler, errorHandler) {
+      showLoading(action);
+      fetch(globalState.api, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, action: action, sheetId: globalState.sheetId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          errorHandler(data.error);
+        } else {
+          successHandler(data);
+        }
+        hideLoading(action);
+      })
+      .catch(error => {
+        console.error("Error POSTing to Apps Script:", error);
+        errorHandler("Lỗi kết nối: " + error.message);
+        hideLoading(action);
+      });
+    }
+
+    function showLoading(action) {
+      const loadingMap = {
+        'getFinancialSummary': 'categoryLoading',
+        'getChartData': 'chartLoading',
+        'getMonthlyData': 'monthlyChartLoading',
+        'getTransactionsByMonth': 'transactionLoading',
+        'getKeywords': 'keywordsLoading',
+        'searchTransactions': 'searchLoading'
+      };
+      const elementId = loadingMap[action];
+      if (elementId) {
+        document.getElementById(elementId).innerText = "Đang tải...";
+        document.getElementById(elementId).classList.remove('hidden');
+      }
+    }
+
+    function hideLoading(action) {
+      const loadingMap = {
+        'getFinancialSummary': 'categoryLoading',
+        'getChartData': 'chartLoading',
+        'getMonthlyData': 'monthlyChartLoading',
+        'getTransactionsByMonth': 'transactionLoading',
+        'getKeywords': 'keywordsLoading',
+        'searchTransactions': 'searchLoading'
+      };
+      const elementId = loadingMap[action];
+      if (elementId) {
+        document.getElementById(elementId).innerText = "";
+        document.getElementById(elementId).classList.add('hidden');
+      }
+    }
+
+    function showAlert(message) {
+      // Có thể thay bằng thư viện UI đẹp hơn
+      alert(message);
+    }
+    
+    // --- CÁC HÀM XỬ LÝ GIAO DIỆN (UI) ---
+    function loadAllData() {
+      loadSummary();
+      loadMonthlyChart();
+      loadCategories();
+    }
+
+    function loadSummary() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const params = { startDate: startDate, endDate: endDate };
+
+      callAppsScript('getFinancialSummary', params, (summary) => {
+        document.getElementById('totalIncome').innerText = formatCurrency(summary.income);
+        document.getElementById('totalExpense').innerText = formatCurrency(summary.expense);
+        document.getElementById('totalBalance').innerText = formatCurrency(summary.balance);
+        displayExpenseCategories(summary.expenseCategories);
+      }, (error) => {
+        showAlert("Lỗi khi tải tổng quan: " + error);
+      });
+    }
+
+    function loadTransactionsByMonth() {
+      var select = document.getElementById('transactionMonthFilter');
+      var month = select.value === 'current' ? new Date().getMonth() + 1 : select.value;
+      var year = new Date().getFullYear();
+
+      const params = { month: month, year: year };
+      
+      callAppsScript('getTransactionsByMonth', params, (transactions) => {
+        if (transactions.error) {
+          showAlert(transactions.error);
+          document.getElementById('recentTransactions').innerHTML = '<li>Không có giao dịch trong tháng này.</li>';
+          return;
+        }
+        globalState.transactionCache = transactions;
+        displayTransactions(transactions);
+      }, (error) => {
+        showAlert("Lỗi khi tải giao dịch: " + error);
+      });
+    }
+
+    function displayTransactions(transactions) {
+      const list = document.getElementById('recentTransactions');
+      list.innerHTML = '';
+      if (!transactions || transactions.length === 0) {
+        list.innerHTML = '<li>Không có giao dịch nào.</li>';
+        return;
+      }
+      transactions.forEach(t => {
+        const item = document.createElement('li');
+        item.className = 'transaction-item';
+        item.onclick = () => openEditTransactionModal(t);
+        item.innerHTML = `
+          <div class="info">
+            <h4>${t.content} (${t.id})</h4>
+            <p>${t.date} | ${t.category}</p>
+          </div>
+          <div class="amount ${t.type.toLowerCase() === 'thu nhập' ? 'income' : 'expense'}">${formatCurrency(t.amount)}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function loadCategories() {
+      callAppsScript('getCategories', {}, (categories) => {
+        globalState.categoriesCache = categories;
+        const datalist = document.getElementById('categoryOptions');
+        datalist.innerHTML = '';
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          datalist.appendChild(option);
+        });
+      }, (error) => {
+        showAlert("Lỗi khi tải danh mục: " + error);
+      });
+    }
+
+    function loadKeywords() {
+      callAppsScript('getKeywords', {}, (keywordsData) => {
+        if (keywordsData.error) {
+          showAlert(keywordsData.error);
+          document.getElementById('keywordList').innerHTML = 'Không có từ khóa nào.';
+          return;
+        }
+        globalState.keywordsCache = keywordsData;
+        displayKeywords(keywordsData);
+      }, (error) => {
+        showAlert("Lỗi khi tải từ khóa: " + error);
+      });
+    }
+
+    function displayKeywords(keywordsData) {
+      const listContainer = document.getElementById('keywordList');
+      listContainer.innerHTML = '';
+      if (!keywordsData || keywordsData.length === 0) {
+        listContainer.innerHTML = 'Không có từ khóa nào.';
+        return;
+      }
+      keywordsData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h4>${item.icon} ${item.category}</h4>
+          <ul class="category-list"></ul>
+        `;
+        const keywordList = card.querySelector('.category-list');
+        const keywords = item.keywords.split(',').map(k => k.trim()).filter(k => k);
+        keywords.forEach(keyword => {
+          const li = document.createElement('li');
+          li.className = 'keyword-item';
+          li.innerHTML = `
+            <span class="keyword-text">${keyword}</span>
+            <span class="delete-btn" onclick="deleteKeyword('${item.category}', '${keyword}')">Xóa</span>
+          `;
+          keywordList.appendChild(li);
+        });
+        listContainer.appendChild(card);
+      });
+    }
+
+    function displayExpenseCategories(categories) {
+      const list = document.getElementById('expenseCategoryList');
+      list.innerHTML = '';
+      if (!categories || categories.length === 0) {
+        list.innerHTML = '<li>Không có chi tiêu nào trong khoảng thời gian này.</li>';
+        return;
+      }
+      categories.sort((a, b) => b.amount - a.amount).forEach(c => {
+        const item = document.createElement('li');
+        item.innerHTML = `<span class="label">${c.category}</span><span class="amount">${formatCurrency(c.amount)}</span>`;
+        list.appendChild(item);
+      });
+    }
+
+    // --- CÁC HÀM BIỂU ĐỒ ---
+    var expensePieChart = null;
+    var monthlyChart = null;
+    
+    function loadExpensePieChart() {
+      const select = document.getElementById('chartDateFilter');
+      const month = select.value === 'currentMonth' ? new Date().getMonth() + 1 : select.value;
+      const year = new Date().getFullYear();
+
+      const params = { month: month, year: year };
+
+      callAppsScript('getChartData', params, (data) => {
+        if (data.error) {
+          showAlert(data.error);
+          return;
+        }
+        updatePieChart(data);
+      }, (error) => {
+        showAlert("Lỗi khi tải biểu đồ: " + error);
+      });
+    }
+
+    function updatePieChart(data) {
+      const canvas = document.getElementById('expensePieChart');
+      if (expensePieChart) {
+        expensePieChart.destroy();
+      }
+
+      const labels = data.chartData.map(d => d.category);
+      const values = data.chartData.map(d => d.amount);
+      const totalAmount = values.reduce((sum, current) => sum + current, 0);
+
+      const backgroundColors = generateColors(labels.length);
+      
+      expensePieChart = new Chart(canvas, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: backgroundColors
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const percentage = totalAmount > 0 ? ((value / totalAmount) * 100).toFixed(1) : 0;
+                  return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function loadMonthlyChart() {
+      const year = new Date().getFullYear();
+      callAppsScript('getMonthlyData', { year: year }, (data) => {
+        if (data.error) {
+          showAlert(data.error);
+          return;
+        }
+        updateMonthlyChart(data);
+      }, (error) => {
+        showAlert("Lỗi khi tải biểu đồ tháng: " + error);
+      });
+    }
+    
+    function updateMonthlyChart(data) {
+      const canvas = document.getElementById('monthlyChart');
+      if (monthlyChart) {
+        monthlyChart.destroy();
+      }
+
+      const labels = data.map(d => `T${d.month}`);
+      const incomeData = data.map(d => d.income);
+      const expenseData = data.map(d => d.expense);
+
+      monthlyChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Thu Nhập',
+            data: incomeData,
+            backgroundColor: varToRgb('--income-color', 0.6),
+            borderColor: varToRgb('--income-color', 1),
+            borderWidth: 1
+          }, {
+            label: 'Chi Tiêu',
+            data: expenseData,
+            backgroundColor: varToRgb('--expense-color', 0.6),
+            borderColor: varToRgb('--expense-color', 1),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // --- CÁC HÀM XỬ LÝ MODAL VÀ FORM ---
+    function openAddTransactionModal(type) {
+      document.getElementById('modalTitle').innerText = `Thêm Giao Dịch ${type}`;
+      document.getElementById('transactionId').value = '';
+      document.getElementById('transactionType').value = type;
+      document.getElementById('transactionContent').value = '';
+      document.getElementById('transactionAmount').value = '';
+      document.getElementById('transactionCategory').value = '';
+      document.getElementById('transactionNote').value = '';
+      document.getElementById('deleteTransactionBtn').style.display = 'none';
+      document.getElementById('saveTransactionBtn').innerText = 'Thêm Giao Dịch';
+      document.getElementById('transactionModal').style.display = 'block';
+      loadCategories(); // Đảm bảo danh mục luôn được cập nhật
+    }
+
+    function openEditTransactionModal(transaction) {
+      document.getElementById('modalTitle').innerText = `Sửa Giao Dịch (${transaction.id})`;
+      document.getElementById('transactionId').value = transaction.id;
+      document.getElementById('transactionType').value = transaction.type;
+      document.getElementById('transactionDate').value = formatDateForInput(transaction.date);
+      document.getElementById('transactionContent').value = transaction.content;
+      document.getElementById('transactionAmount').value = transaction.amount;
+      document.getElementById('transactionCategory').value = transaction.category;
+      document.getElementById('transactionNote').value = transaction.note;
+      document.getElementById('deleteTransactionBtn').style.display = 'inline-block';
+      document.getElementById('saveTransactionBtn').innerText = 'Lưu Thay Đổi';
+      document.getElementById('transactionModal').style.display = 'block';
+      loadCategories();
+    }
+
+    function closeModal() {
+      document.getElementById('transactionModal').style.display = 'none';
+    }
+
+    function handleTransactionSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const transaction = {
+        id: form.transactionId.value,
+        date: form.transactionDate.value.split('-').reverse().join('/'),
+        type: form.transactionType.value,
+        content: form.transactionContent.value,
+        amount: parseFloat(form.transactionAmount.value),
+        category: form.transactionCategory.value,
+        note: form.transactionNote.value,
+      };
+
+      if (transaction.id) {
+        // Sửa giao dịch
+        const month = new Date(form.transactionDate.value).getMonth() + 1;
+        const year = new Date(form.transactionDate.value).getFullYear();
+        callAppsScriptPost('updateTransaction', { ...transaction, month, year }, () => {
+          showAlert("Sửa giao dịch thành công!");
+          closeModal();
+          loadAllData();
+          loadTransactionsByMonth();
+        }, (error) => {
+          showAlert("Lỗi khi sửa giao dịch: " + error);
+        });
+      } else {
+        // Thêm giao dịch
+        callAppsScriptPost('addTransaction', transaction, () => {
+          showAlert("Thêm giao dịch thành công!");
+          closeModal();
+          loadAllData();
+          loadTransactionsByMonth();
+        }, (error) => {
+          showAlert("Lỗi khi thêm giao dịch: " + error);
+        });
+      }
+    }
+
+    document.getElementById('deleteTransactionBtn').addEventListener('click', function() {
+      if (confirm("Bạn có chắc chắn muốn xóa giao dịch này?")) {
+        const transactionId = document.getElementById('transactionId').value;
+        const date = document.getElementById('transactionDate').value;
+        const month = new Date(date).getMonth() + 1;
+
+        callAppsScriptPost('deleteTransaction', { id: transactionId, month: month }, () => {
+          showAlert("Xóa giao dịch thành công!");
+          closeModal();
+          loadAllData();
+          loadTransactionsByMonth();
+        }, (error) => {
+          showAlert("Lỗi khi xóa giao dịch: " + error);
+        });
+      }
+    });
+
+    // --- CÁC HÀM KHÁC ---
+    function searchTransactions() {
+      const month = document.getElementById('searchMonth').value;
+      const content = document.getElementById('searchContent').value;
+      const amount = document.getElementById('searchAmount').value;
+      const category = document.getElementById('searchCategory').value;
+
+      const params = {
+        month: month,
+        content: content,
+        amount: amount,
+        category: category
+      };
+      
+      callAppsScript('searchTransactions', params, (result) => {
+        if (result.error) {
+          showAlert(result.error);
+          document.getElementById('searchResultsList').innerHTML = '<li>' + result.error + '</li>';
+          return;
+        }
+        displayTransactions(result.transactions);
+      }, (error) => {
+        showAlert("Lỗi khi tìm kiếm: " + error);
+      });
+    }
+
+    function addKeyword() {
+      const category = document.getElementById('addKeywordCategory').value;
+      const keywords = document.getElementById('addKeywordText').value;
+
+      if (!category || !keywords) {
+        showAlert("Vui lòng điền đầy đủ Phân loại và Từ khóa.");
+        return;
+      }
+      
+      callAppsScriptPost('addKeyword', { category, keywords }, () => {
+        showAlert("Thêm từ khóa thành công!");
+        document.getElementById('addKeywordCategory').value = '';
+        document.getElementById('addKeywordText').value = '';
+        loadKeywords();
+      }, (error) => {
+        showAlert("Lỗi khi thêm từ khóa: " + error);
+      });
+    }
+
+    function deleteKeyword(category, keyword) {
+      if (confirm(`Bạn có chắc chắn muốn xóa từ khóa '${keyword}' khỏi danh mục '${category}'?`)) {
+        callAppsScriptPost('deleteKeyword', { category, keyword }, () => {
+          showAlert("Xóa từ khóa thành công!");
+          loadKeywords();
+        }, (error) => {
+          showAlert("Lỗi khi xóa từ khóa: " + error);
+        });
+      }
+    }
+    
+    // --- CÁC HÀM HỖ TRỢ ---
+    function formatCurrency(num) {
+      if (typeof num !== 'number') return '0 VNĐ';
+      return num.toLocaleString('vi-VN') + ' VNĐ';
+    }
+
+    function formatDateForInput(dateString) {
+      const parts = dateString.split('/');
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      return dateString;
+    }
+
+    function generateColors(num) {
+      const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+        '#FF9F40', '#E7E9ED', '#A1E8AF', '#F7786B', '#1C3144',
+      ];
+      const result = [];
+      for (let i = 0; i < num; i++) {
+        result.push(colors[i % colors.length]);
+      }
+      return result;
+    }
+
+    function varToRgb(cssVar, opacity) {
+      const color = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+      if (!color) return `rgba(0,0,0,${opacity})`;
+      return color.replace(')', `, ${opacity})`).replace('rgb', 'rgba');
+    }
+  </script>
 </body>
 </html>
